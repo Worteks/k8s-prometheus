@@ -1,0 +1,11 @@
+groups:
+- name: PrometheusNonWorkingHours
+  rules:
+  - alert: IsNonWorkingHour
+    expr: day_of_week() == 6 or day_of_week() == 0 or europe_amsterdam_hour >= 18 or europe_amsterdam_hour <= 7
+    for: 1m
+    labels:
+      internal: workinghours
+    annotations:
+      summary: "Should not relay alerts outside of business hours"
+      description: "Should not relay alerts outside of business hours"

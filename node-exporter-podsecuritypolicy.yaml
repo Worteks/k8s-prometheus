@@ -1,0 +1,33 @@
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: hostaccess-prometheus-monitoring-node-exporter
+spec:
+  allowPrivilegeEscalation: true
+  fsGroup:
+    ranges:
+    - max: 65535
+      min: 0
+    rule: MustRunAs
+  hostNetwork: true
+  hostPID: true
+  hostPorts:
+  - max: 65535
+    min: 0
+  runAsUser:
+    rule: RunAsAny
+  seLinux:
+    rule: RunAsAny
+  supplementalGroups:
+    ranges:
+    - max: 65535
+      min: 0
+    rule: MustRunAs
+  volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - hostPath
+  - persistentVolumeClaim
+  - projected
+  - secret

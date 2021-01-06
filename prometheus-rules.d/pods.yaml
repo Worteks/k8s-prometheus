@@ -1,0 +1,43 @@
+groups:
+- name: KubernetesPods
+  rules:
+  - alert: ContainerCpuUsage
+    expr: (sum(rate(container_cpu_usage_seconds_total{pod=~".+",container=~".+"}[3m])) BY (instance,namespace,pod,container) * 100) > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Container CPU usage (instance {{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }})"
+      description: "Container CPU usage is above 80%\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+  - alert: ContainerMemoryUsage
+    expr: (sum by(instance,namespace,pod,container) (container_memory_usage_bytes{pod=~".+",container=~".+"}) / sum by(instance,namespace,pod,container) (container_spec_memory_limit_bytes{pod=~".+",container=~".+"} > 0) * 100) > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Container Memory usage (instance {{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }})"
+      description: "Container Memory usage is above 80%\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+  - alert: ContainerVolumeUsage
+    expr: (1 - (sum(container_fs_inodes_free) BY (instance,device) / sum(container_fs_inodes_total) BY (instance,device)) * 100) > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Container Volume usage (instance {{ $labels.instance }} on device {{ $labels.device }})"
+      description: "Container Volume usage is above 80%\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+  - alert: ContainerVolumeIoUsage
+    expr: (sum(container_fs_io_current) BY (instance, device) * 100) > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Container Volume IO usage (instance {{ $labels.instance }} on device {{ $labels.device }})"
+      description: "Container Volume IO usage is above 80%\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+  - alert: ContainerHighThrottleRate
+    expr: rate(container_cpu_cfs_throttled_seconds_total{pod=~".+",container=~".+"}[3m]) > 1
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Container high throttle rate (instance {{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }})"
+      description: "Container is being throttled\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"

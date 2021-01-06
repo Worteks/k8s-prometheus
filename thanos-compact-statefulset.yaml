@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: thanos-compact
+spec:
+  podManagementPolicy: OrderedReady
+  replicas: 1
+  selector:
+    matchLabels:
+      name: thanos-compact
+  serviceName: thanos-compact
+  template:
+    metadata:
+      labels:
+        name: thanos-compact
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: name
+                operator: In
+                values: [ thanos-compact ]
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - args:
+        - compact
+        - --data-dir=/var/thanos/compact
+        - --debug.accept-malformed-index
+        - --log.level=info
+        - --objstore.config=$(OBJSTORE_CONFIG)
+        - --retention.resolution-raw=90d
+        - --retention.resolution-5m=90d
+        - --retention.resolution-1h=90d
+        - --wait
+        - --wait-interval=2h
+        env:
+        - name: OBJSTORE_CONFIG
+          valueFrom:
+            secretKeyRef:
+              key: thanos.yaml
+              name: thanos-store
+        - name: TZ
+          value: Europe/Paris
+        image: quay.io/thanos/thanos:v0.17.1
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 8
+          httpGet:
+            path: /-/healthy
+            port: 10902
+          periodSeconds: 30
+        name: thanos
+        ports:
+        - containerPort: 10902
+        readinessProbe:
+          failureThreshold: 20
+          httpGet:
+            path: /-/ready
+            port: 10902
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: 500m
+            memory: 4Gi
+          requests:
+            cpu: 50m
+            memory: 1Gi
+        volumeMounts:
+        - mountPath: /var/thanos/compact
+          name: data
+      securityContext:
+        runAsUser: 1001
+      terminationGracePeriodSeconds: 120
+  updateStrategy:
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ ReadWriteOnce ]
+      resources:
+        requests:
+          storage: 12Gi

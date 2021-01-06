@@ -1,0 +1,1094 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Ceph OSDs overview.",
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": 38,
+  "iteration": 1597659317105,
+  "links": [],
+  "panels": [
+    {
+      "aliasColors": {
+        "@95%ile": "#e0752d"
+      },
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      },
+      "hiddenSeries": false,
+      "id": 12,
+      "legend": {
+        "avg": false,
+        "current": true,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "avg (irate(ceph_osd_op_r_latency_sum{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"}[1m]) / on (ceph_daemon) irate(ceph_osd_op_r_latency_count{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"}[1m]) * 1000)",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "AVG read",
+          "refId": "A"
+        },
+        {
+          "expr": "max (irate(ceph_osd_op_r_latency_sum{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"}[1m]) / on (ceph_daemon) irate(ceph_osd_op_r_latency_count{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"}[1m]) * 1000)",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "MAX read",
+          "refId": "B"
+        },
+        {
+          "expr": "quantile(0.95, (irate(ceph_osd_op_r_latency_sum{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"}[1m]) / on (ceph_daemon) irate(ceph_osd_op_r_latency_count{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"}[1m]) * 1000))",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "@95%ile",
+          "refId": "C"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "OSD Read Latencies",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:2341",
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        },
+        {
+          "$$hashKey": "object:2342",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "columns": [],
+      "datasource": "Prometheus",
+      "description": "This table shows the osd's that are delivering the 10 highest read latencies within the cluster",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fontSize": "100%",
+      "gridPos": {
+        "h": 8,
+        "w": 4,
+        "x": 8,
+        "y": 0
+      },
+      "id": 15,
+      "links": [],
+      "pageSize": null,
+      "scroll": true,
+      "showHeader": true,
+      "sort": {
+        "col": 2,
+        "desc": true
+      },
+      "styles": [
+        {
+          "$$hashKey": "object:1378",
+          "alias": "OSD ID",
+          "align": "auto",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "pattern": "ceph_daemon",
+          "thresholds": [],
+          "type": "string",
+          "unit": "short"
+        },
+        {
+          "$$hashKey": "object:1379",
+          "alias": "Latency (ms)",
+          "align": "auto",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 0,
+          "pattern": "Value",
+          "thresholds": [],
+          "type": "number",
+          "unit": "none"
+        },
+        {
+          "$$hashKey": "object:1380",
+          "alias": "",
+          "align": "auto",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "pattern": "/.*/",
+          "thresholds": [],
+          "type": "hidden",
+          "unit": "short"
+        }
+      ],
+      "targets": [
+        {
+          "expr": "topk(10, (irate(ceph_osd_op_r_latency_sum{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"}[1m]) / on (ceph_daemon) irate(ceph_osd_op_r_latency_count{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"}[1m]) * 1000))",
+          "format": "table",
+          "instant": true,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "title": "Highest READ Latencies",
+      "transform": "table",
+      "type": "table-old"
+    },
+    {
+      "aliasColors": {
+        "@95%ile write": "#e0752d"
+      },
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 12,
+        "y": 0
+      },
+      "hiddenSeries": false,
+      "id": 13,
+      "legend": {
+        "avg": false,
+        "current": true,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "avg (irate(ceph_osd_op_w_latency_sum{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"}[1m]) / on (ceph_daemon) irate(ceph_osd_op_w_latency_count{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"}[1m]) * 1000)",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "AVG write",
+          "refId": "A"
+        },
+        {
+          "expr": "max (irate(ceph_osd_op_w_latency_sum{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"}[1m]) / on (ceph_daemon) irate(ceph_osd_op_w_latency_count{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"}[1m]) * 1000)",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "MAX write",
+          "refId": "B"
+        },
+        {
+          "expr": "quantile(0.95, (irate(ceph_osd_op_w_latency_sum{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"}[1m]) / on (ceph_daemon) irate(ceph_osd_op_w_latency_count{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"}[1m]) * 1000))",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "@95%ile write",
+          "refId": "C"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "OSD Write Latencies",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:3057",
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        },
+        {
+          "$$hashKey": "object:3058",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "columns": [],
+      "datasource": "Prometheus",
+      "description": "This table shows the osd's that are delivering the 10 highest write latencies within the cluster",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fontSize": "100%",
+      "gridPos": {
+        "h": 8,
+        "w": 4,
+        "x": 20,
+        "y": 0
+      },
+      "id": 16,
+      "links": [],
+      "pageSize": null,
+      "scroll": true,
+      "showHeader": true,
+      "sort": {
+        "col": 2,
+        "desc": true
+      },
+      "styles": [
+        {
+          "$$hashKey": "object:1474",
+          "alias": "OSD ID",
+          "align": "auto",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "pattern": "ceph_daemon",
+          "thresholds": [],
+          "type": "string",
+          "unit": "short"
+        },
+        {
+          "$$hashKey": "object:1475",
+          "alias": "Latency (ms)",
+          "align": "auto",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 0,
+          "pattern": "Value",
+          "thresholds": [],
+          "type": "number",
+          "unit": "none"
+        },
+        {
+          "$$hashKey": "object:1476",
+          "alias": "",
+          "align": "auto",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "pattern": "/.*/",
+          "thresholds": [],
+          "type": "hidden",
+          "unit": "short"
+        }
+      ],
+      "targets": [
+        {
+          "expr": "topk(10, (sort((irate(ceph_osd_op_w_latency_sum{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"}[1m]) / on (ceph_daemon) irate(ceph_osd_op_w_latency_count{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"}[1m]) * 1000))))",
+          "format": "table",
+          "instant": true,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "title": "Highest WRITE Latencies",
+      "transform": "table",
+      "type": "table-old"
+    },
+    {
+      "cacheTimeout": null,
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": null
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 4,
+        "x": 0,
+        "y": 8
+      },
+      "id": 2,
+      "interval": null,
+      "links": [],
+      "maxDataPoints": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "count (ceph_osd_metadata{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\",device_class=\"hdd\"}) OR on () vector(0)",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "hdd",
+          "refId": "A"
+        },
+        {
+          "expr": "count (ceph_osd_metadata{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\",device_class=\"ssd\"}) OR on () vector(0)",
+          "interval": "",
+          "legendFormat": "ssd",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "OSD Types Summary",
+      "type": "stat"
+    },
+    {
+      "cacheTimeout": null,
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 4,
+        "x": 4,
+        "y": 8
+      },
+      "hideTimeOverride": true,
+      "id": 4,
+      "interval": null,
+      "links": [],
+      "maxDataPoints": "1",
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "vertical",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "count(ceph_bluefs_wal_total_bytes{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"})",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "bluestore",
+          "refId": "A",
+          "step": 240
+        },
+        {
+          "expr": "count(ceph_osd_metadata{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"}) - count(ceph_bluefs_wal_total_bytes{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"})",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "filestore",
+          "refId": "B",
+          "step": 240
+        },
+        {
+          "expr": "absent(ceph_bluefs_wal_total_bytes{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"})*count(ceph_osd_metadata{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"})",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "filestore",
+          "refId": "C",
+          "step": 240
+        }
+      ],
+      "timeFrom": "2m",
+      "timeShift": null,
+      "title": "OSD Objectstore Types",
+      "type": "stat"
+    },
+    {
+      "cacheTimeout": null,
+      "datasource": "Prometheus",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 4,
+        "x": 8,
+        "y": 8
+      },
+      "hideTimeOverride": true,
+      "id": 8,
+      "interval": null,
+      "links": [],
+      "maxDataPoints": "",
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "count(ceph_osd_stat_bytes{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"} < 1099511627776)",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "<1 TB",
+          "refId": "A",
+          "step": 2
+        },
+        {
+          "expr": "count(ceph_osd_stat_bytes{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"} >= 1099511627776 < 2199023255552)",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "<2 TB",
+          "refId": "B",
+          "step": 2
+        },
+        {
+          "expr": "count(ceph_osd_stat_bytes{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"} >= 2199023255552 < 3298534883328)",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "<3TB",
+          "refId": "C",
+          "step": 2
+        },
+        {
+          "expr": "count(ceph_osd_stat_bytes{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"} >= 3298534883328 < 4398046511104)",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "<4TB",
+          "refId": "D",
+          "step": 2
+        },
+        {
+          "expr": "count(ceph_osd_stat_bytes{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"} >= 4398046511104 < 6597069766656)",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "<6TB",
+          "refId": "E",
+          "step": 2
+        },
+        {
+          "expr": "count(ceph_osd_stat_bytes{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"} >= 6597069766656 < 8796093022208)",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "<8TB",
+          "refId": "F",
+          "step": 2
+        },
+        {
+          "expr": "count(ceph_osd_stat_bytes{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"} >= 8796093022208 < 10995116277760)",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "<10TB",
+          "refId": "G",
+          "step": 2
+        },
+        {
+          "expr": "count(ceph_osd_stat_bytes{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"} >= 10995116277760 < 13194139533312)",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "<12TB",
+          "refId": "H",
+          "step": 2
+        },
+        {
+          "expr": "count(ceph_osd_stat_bytes{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"} >= 13194139533312)",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "12TB+",
+          "refId": "I",
+          "step": 2
+        }
+      ],
+      "timeFrom": "2m",
+      "timeShift": null,
+      "title": "OSD Size Summary",
+      "type": "stat"
+    },
+    {
+      "aliasColors": {},
+      "bars": true,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "Prometheus",
+      "description": "Each bar indicates the number of OSD's that have a PG count in a specific range as shown on the x axis.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "hiddenSeries": false,
+      "id": 6,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": false,
+        "hideEmpty": false,
+        "hideZero": false,
+        "max": false,
+        "min": false,
+        "rightSide": false,
+        "show": false,
+        "total": false,
+        "values": false
+      },
+      "lines": false,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "ceph_osd_numpg{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\",ceph_daemon=~\"$osd\"}",
+          "format": "time_series",
+          "instant": true,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "PGs per OSD",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Distribution of PGs per OSD",
+      "tooltip": {
+        "shared": false,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": 20,
+        "mode": "histogram",
+        "name": null,
+        "show": true,
+        "values": [
+          "total"
+        ]
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:2976",
+          "decimals": 0,
+          "format": "short",
+          "label": "# of OSDs",
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        },
+        {
+          "$$hashKey": "object:2977",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "id": 20,
+      "panels": [],
+      "title": "R/W Profile",
+      "type": "row"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "Prometheus",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 17
+      },
+      "hiddenSeries": false,
+      "id": 10,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "round(sum(irate(ceph_pool_rd{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\"}[60s])))",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "Reads",
+          "refId": "A"
+        },
+        {
+          "expr": "round(sum(irate(ceph_pool_wr{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\"}[60s])))",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "Writes",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": "36h",
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Read/Write Profile",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:3213",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:3214",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 25,
+  "style": "dark",
+  "tags": [
+    "ceph",
+    "cluster",
+    "osd",
+    "storage"
+  ],
+  "templating": {
+    "list": [
+      {
+        "allValue": null,
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "Prometheus",
+        "definition": "label_values(ceph_health_status,kubernetes_cluster)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Kubernetes Cluster",
+        "multi": true,
+        "name": "cluster",
+        "options": [],
+        "query": "label_values(ceph_health_status,kubernetes_cluster)",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "Prometheus",
+        "definition": "label_values(ceph_health_status{kubernetes_cluster=~\"$cluster\"},kubernetes_namespace)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Kubernetes Namespace",
+        "multi": true,
+        "name": "namespace",
+        "options": [],
+        "query": "label_values(ceph_health_status{kubernetes_cluster=~\"$cluster\"},kubernetes_namespace)",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "Prometheus",
+        "definition": "label_values(ceph_osd_op{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\"},ceph_daemon)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Ceph OSD",
+        "multi": true,
+        "name": "osd",
+        "options": [],
+        "query": "label_values(ceph_osd_op{kubernetes_cluster=~\"$cluster\",kubernetes_namespace=~\"$namespace\"},ceph_daemon)",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      }
+    ]
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ],
+    "time_options": [
+      "5m",
+      "15m",
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d"
+    ]
+  },
+  "timezone": "browser",
+  "title": "Ceph OSD",
+  "uid": "cephosd",
+  "version": 1
+}

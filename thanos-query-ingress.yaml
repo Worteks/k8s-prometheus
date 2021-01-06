@@ -1,0 +1,12 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: thanos-query
+spec:
+  rules:
+  - host: thanos-nocache.ROOT_DOMAIN
+    http:
+      paths:
+      - backend:
+          serviceName: thanos-query
+          servicePort: 9090

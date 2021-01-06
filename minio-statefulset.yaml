@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: minio
+spec:
+  podManagementPolicy: Parallel
+  replicas: 4
+  selector:
+    matchLabels:
+      name: minio
+  serviceName: minio
+  template:
+    metadata:
+      labels:
+        name: minio
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: name
+                operator: In
+                values: [ minio ]
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - command:
+        - /bin/sh
+        - -ce
+        - /usr/bin/docker-entrypoint.sh minio server http://minio-{0...3}.minio.NAMESPACE_SED.svc.cluster.local/data{0...3}
+        env:
+        - name: MINIO_BROWSER
+          value: "off"
+        - name: MINIO_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: access-key
+              name: minio-admin
+        - name: MINIO_API_READY_DEADLINE
+          value: 25s
+        - name: MINIO_REGION_NAME
+          value: us-east-1
+        - name: MINIO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              key: secret-key
+              name: minio-admin
+        - name: MINIO_PROMETHEUS_AUTH_TYPE
+          value: public
+        - name: TZ
+          value: Europe/Paris
+        image: docker.io/minio/minio:RELEASE.2020-11-06T23-17-07Z
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 15
+          httpGet:
+            path: /minio/health/live
+            port: 9000
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 25
+        name: minio
+        ports:
+        - containerPort: 9000
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /minio/health/ready
+            port: 9000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        resources:
+          limits:
+            cpu: 600m
+            memory: 3Gi
+          requests:
+            cpu: 200m
+            memory: 2Gi
+        volumeMounts:
+        - mountPath: /data0
+          name: data
+          subPath: part0
+        - mountPath: /data1
+          name: data
+          subPath: part1
+        - mountPath: /data2
+          name: data
+          subPath: part2
+        - mountPath: /data3
+          name: data
+          subPath: part3
+      securityContext:
+        runAsUser: 1001
+  updateStrategy:
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ ReadWriteOnce ]
+      resources:
+        requests:
+          storage: 100Gi

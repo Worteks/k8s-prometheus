@@ -1,0 +1,146 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 30s
+      evaluation_interval: 30s
+      external_labels:
+        monitor: opsperator-monitor
+
+    rule_files:
+    - /etc/prometheus/rules.d/*.yaml
+
+    scrape_configs:
+    - job_name: prometheus
+      static_configs:
+      - labels:
+          kubernetes_cluster: k8s-prod
+          kubernetes_namespace: NAMESPACE_SED
+          kubernetes_service_name: prometheus
+          kubernetes_pod_name: prometheus
+        targets: ['localhost:9090']
+
+    - job_name: cluster
+      kubernetes_sd_configs:
+      - role: endpoints
+        selectors:
+        - role: endpoints
+          label: k8s-cluster=scrape-me
+      relabel_configs:
+      - action: replace
+        replacement: k8s-prod
+        source_labels: [__meta_kubernetes_endpoint_address_target_kind]
+        target_label: kubernetes_cluster
+      - action: replace
+        source_labels: [__meta_kubernetes_namespace]
+        target_label: kubernetes_namespace
+      scheme: http
+      scrape_interval: 30s
+      scrape_timeout: 20s
+
+    - job_name: cadvisor
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      kubernetes_sd_configs:
+      - role: node
+      metrics_path: /metrics/cadvisor
+      relabel_configs:
+      - action: replace
+        replacement: k8s-prod
+        source_labels: [__meta_kubernetes_endpoint_address_target_kind]
+        target_label: kubernetes_cluster
+      - action: replace
+        source_labels: [__meta_kubernetes_node_name]
+        target_label: kubernetes_node_name
+      scheme: https
+      scrape_interval: 30s
+      scrape_timeout: 20s
+      tls_config:
+        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        insecure_skip_verify: true
+
+    - job_name: kubelet
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      kubernetes_sd_configs:
+      - role: node
+      relabel_configs:
+      - action: replace
+        replacement: k8s-prod
+        source_labels: [__meta_kubernetes_endpoint_address_target_kind]
+        target_label: kubernetes_cluster
+      - action: replace
+        source_labels: [__meta_kubernetes_node_name]
+        target_label: kubernetes_node_name
+      scheme: https
+      scrape_interval: 30s
+      scrape_timeout: 20s
+      tls_config:
+        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        insecure_skip_verify: true
+
+    - job_name: nodes
+      kubernetes_sd_configs:
+      - role: endpoints
+        selectors:
+        - label: k8s-node=scrape-me
+          role: endpoints
+      relabel_configs:
+      - action: replace
+        replacement: k8s-prod
+        source_labels: [__meta_kubernetes_endpoint_address_target_kind]
+        target_label: kubernetes_cluster
+      - action: replace
+        source_labels: [__meta_kubernetes_pod_node_name]
+        target_label: kubernetes_node_name
+      scheme: http
+      scrape_interval: 30s
+      scrape_timeout: 20s
+
+    - job_name: kubeci
+      kubernetes_sd_configs:
+      - role: endpoints
+        selectors:
+        - label: k8s-app=scrape-me
+          role: endpoints
+      relabel_configs:
+      - action: replace
+        replacement: k8s-prod
+        source_labels: [__meta_kubernetes_endpoint_address_target_kind]
+        target_label: kubernetes_cluster
+      - action: replace
+        regex: (.+)
+        source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+        target_label: __metrics_path__
+      - action: keep
+        regex: '(exporter-[0-9]*|tcp-9113)'
+        source_labels: [__meta_kubernetes_endpoint_port_name]
+      - action: replace
+        source_labels: [__meta_kubernetes_namespace]
+        target_label: kubernetes_namespace
+      - action: replace
+        source_labels: [__meta_kubernetes_pod_node_name]
+        target_label: kubernetes_node_name
+      - action: replace
+        source_labels: [__meta_kubernetes_pod_name]
+        target_label: kubernetes_pod_name
+      - action: replace
+        source_labels: [__meta_kubernetes_pod_label_name]
+        target_label: kubernetes_service_name
+      scheme: http
+      scrape_interval: 30s
+      scrape_timeout: 20s
+
+    alerting:
+      alert_relabel_configs:
+      - action: replace
+        regex: (.+)
+        replacement: prometheus
+        source_labels: [scrape_by]
+        target_label: scrape_by
+      alertmanagers:
+      - scheme: http
+        static_configs:
+        - targets:
+          - alertmanager.NAMESPACE_SED.svc.cluster.local:9093

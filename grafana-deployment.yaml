@@ -1,0 +1,492 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      name: grafana
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: grafana
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: name
+                operator: In
+                values:
+                - grafana
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - env:
+        - name: TZ
+          value: Europe/Paris
+        image: docker.io/grafana/grafana:7.3.6
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 39
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          successThreshold: 1
+          tcpSocket:
+            port: 3000
+          timeoutSeconds: 5
+        name: grafana
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: 3000
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 15
+          successThreshold: 1
+          timeoutSeconds: 3
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 50m
+            memory: 64Mi
+        volumeMounts:
+        - mountPath: /etc/grafana/grafana.ini
+          name: config
+          subPath: grafana.ini
+        - mountPath: /etc/grafana/provisioning/datasources/prometheus.yaml
+          name: provconfig
+          subPath: prometheus.yaml
+        - mountPath: /etc/grafana/provisioning/dashboards
+          name: run
+          subPath: dashboards
+        - mountPath: /etc/grafana/provisioning/dashboards/ops-dashboards.yaml
+          name: provconfig
+          subPath: ops-dashboards.yaml
+        - mountPath: /ops-dashboards
+          name: dashboards
+        - mountPath: /var/lib/grafana
+          name: run
+          subPath: data
+        - mountPath: /var/lib/grafana/plugins
+          name: run
+          subPath: plugins
+      nodeSelector:
+        node-role.kubernetes.io/infra: "true"
+      securityContext:
+        runAsUser: 1000
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: config
+        secret:
+          defaultMode: 420
+          secretName: grafana
+      - configMap:
+           name: grafana
+        name: provconfig
+      - name: dashboards
+        projected:
+          defaultMode: 420
+          sources:
+          - configMap:
+              items:
+              - key: Apache.json
+                path: Apache.json
+              name: grafana-dashboard-apache
+          - configMap:
+              items:
+              - key: Ansible_Operator.json
+                path: Ansible_Operator.json
+              name: grafana-dashboard-ansibleoperator
+          - configMap:
+              items:
+              - key: BigBlueButton.json
+                path: BigBlueButton.json
+              name: grafana-dashboard-bigbluebutton
+          - configMap:
+              items:
+              - key: BlueMind.json
+                path: BlueMind.json
+              name: grafana-dashboard-bluemind
+          - configMap:
+              items:
+              - key: BlueMind_Full.json
+                path: BlueMind_Full.json
+              name: grafana-dashboard-bluemindfull
+          - configMap:
+              items:
+              - key: Cassandra.json
+                path: Cassandra.json
+              name: grafana-dashboard-cassandra
+          - configMap:
+              items:
+              - key: Ceph_Cluster.json
+                path: Ceph_Cluster.json
+              name: grafana-dashboard-cephcluster
+          - configMap:
+              items:
+              - key: Ceph_Cluster_Details.json
+                path: Ceph_Cluster_Details.json
+              name: grafana-dashboard-cephclusterdetails
+          - configMap:
+              items:
+              - key: Ceph_MDS.json
+                path: Ceph_MDS.json
+              name: grafana-dashboard-cephmds
+          - configMap:
+              items:
+              - key: Ceph_OSD.json
+                path: Ceph_OSD.json
+              name: grafana-dashboard-cephosd
+          - configMap:
+              items:
+              - key: Ceph_OSD_Performance.json
+                path: Ceph_OSD_Performance.json
+              name: grafana-dashboard-cephosdperformance
+          - configMap:
+              items:
+              - key: Ceph_Pool.json
+                path: Ceph_Pool.json
+              name: grafana-dashboard-cephpool
+          - configMap:
+              items:
+              - key: Ceph_Pool_Details.json
+                path: Ceph_Pool_Details.json
+              name: grafana-dashboard-cephpooldetails
+          - configMap:
+              items:
+              - key: Ceph_RBD.json
+                path: Ceph_RBD.json
+              name: grafana-dashboard-cephrbd
+          - configMap:
+              items:
+              - key: Ceph_RGW.json
+                path: Ceph_RGW.json
+              name: grafana-dashboard-cephrgw
+          - configMap:
+              items:
+              - key: Ceph_RGW_Buckets.json
+                path: Ceph_RGW_Buckets.json
+              name: grafana-dashboard-cephrgwbuckets
+          - configMap:
+              items:
+              - key: Ceph_RGW_Details.json
+                path: Ceph_RGW_Details.json
+              name: grafana-dashboard-cephrgwdetails
+          - configMap:
+              items:
+              - key: CodiMD.json
+                path: CodiMD.json
+              name: grafana-dashboard-codimd
+          - configMap:
+              items:
+              - key: Docker_Registry.json
+                path: Docker_Registry.json
+              name: grafana-dashboard-dockerregistry
+          - configMap:
+              items:
+              - key: ElasticSearch.json
+                path: ElasticSearch.json
+              name: grafana-dashboard-elasticsearch
+          - configMap:
+              items:
+              - key: Fluentd.json
+                path: Fluentd.json
+              name: grafana-dashboard-fluentd
+          - configMap:
+              items:
+              - key: FreeSwitch.json
+                path: FreeSwitch.json
+              name: grafana-dashboard-freeswitch
+          - configMap:
+              items:
+              - key: Gitea.json
+                path: Gitea.json
+              name: grafana-dashboard-gitea
+          - configMap:
+              items:
+              - key: Go_Applications.json
+                path: Go_Applications.json
+              name: grafana-dashboard-goapplications
+          - configMap:
+              items:
+              - key: Grafana.json
+                path: Grafana.json
+              name: grafana-dashboard-grafana
+          - configMap:
+              items:
+              - key: HAProxy.json
+                path: HAProxy.json
+              name: grafana-dashboard-haproxy
+          - configMap:
+              items:
+              - key: Kubernetes_Backups.json
+                path: Kubernetes_Backups.json
+              name: grafana-dashboard-kubernetesbackups
+          - configMap:
+              items:
+              - key: Kubernetes_Capacity_Planning.json
+                path: Kubernetes_Capacity_Planning.json
+              name: grafana-dashboard-kubernetescapacityplanning
+          - configMap:
+              items:
+              - key: Kubernetes_Clusters.json
+                path: Kubernetes_Clusters.json
+              name: grafana-dashboard-kubernetesclusters
+          - configMap:
+              items:
+              - key: Kubernetes_Clusters_Health.json
+                path: Kubernetes_Clusters_Health.json
+              name: grafana-dashboard-kubernetesclustershealth
+          - configMap:
+              items:
+              - key: Kubernetes_Clusters_Status.json
+                path: Kubernetes_Clusters_Status.json
+              name: grafana-dashboard-kubernetesclustersstatus
+          - configMap:
+              items:
+              - key: Kubernetes_Kubelet.json
+                path: Kubernetes_Kubelet.json
+              name: grafana-dashboard-kuberneteskubelet
+          - configMap:
+              items:
+              - key: Kubernetes_Networking.json
+                path: Kubernetes_Networking.json
+              name: grafana-dashboard-kubernetesnetworking
+          - configMap:
+              items:
+              - key: Kubernetes_Networking_Details.json
+                path: Kubernetes_Networking_Details.json
+              name: grafana-dashboard-kubernetesnetworkingdetails
+          - configMap:
+              items:
+              - key: Kubernetes_Nodes.json
+                path: Kubernetes_Nodes.json
+              name: grafana-dashboard-kubernetesnodes
+          - configMap:
+              items:
+              - key: Kubernetes_Pods.json
+                path: Kubernetes_Pods.json
+              name: grafana-dashboard-kubernetespods
+          - configMap:
+              items:
+              - key: Mattermost.json
+                path: Mattermost.json
+              name: grafana-dashboard-mattermost
+          - configMap:
+              items:
+              - key: Mattermost_Bonus.json
+                path: Mattermost_Bonus.json
+              name: grafana-dashboard-mattermostbonus
+          - configMap:
+              items:
+              - key: Mattermost_Performance.json
+                path: Mattermost_Performance.json
+              name: grafana-dashboard-mattermostperformance
+          - configMap:
+              items:
+              - key: Memcached.json
+                path: Memcached.json
+              name: grafana-dashboard-memcached
+          - configMap:
+              items:
+              - key: MinIO.json
+                path: MinIO.json
+              name: grafana-dashboard-minio
+          - configMap:
+              items:
+              - key: MongoDB.json
+                path: MongoDB.json
+              name: grafana-dashboard-mongodb
+          - configMap:
+              items:
+              - key: MongoDB_Overview.json
+                path: MongoDB_Overview.json
+              name: grafana-dashboard-mongodboverview
+          - configMap:
+              items:
+              - key: MongoDB_ReplSet.json
+                path: MongoDB_ReplSet.json
+              name: grafana-dashboard-mongodbreplset
+          - configMap:
+              items:
+              - key: MongoDB_WiredTiger.json
+                path: MongoDB_WiredTiger.json
+              name: grafana-dashboard-mongodbwiredtiger
+          - configMap:
+              items:
+              - key: MySQL_InnoDB_Compression.json
+                path: MySQL_InnoDB_Compression.json
+              name: grafana-dashboard-mysqlinnodbcompression
+          - configMap:
+              items:
+              - key: MySQL_InnoDB_Metrics.json
+                path: MySQL_InnoDB_Metrics.json
+              name: grafana-dashboard-mysqlinnodbmetrics
+          - configMap:
+              items:
+              - key: MySQL_InnoDB_Metrics_Advanced.json
+                path: MySQL_InnoDB_Metrics_Advanced.json
+              name: grafana-dashboard-mysqlinnodbmetricsadvanced
+          - configMap:
+              items:
+              - key: MySQL_Overview.json
+                path: MySQL_Overview.json
+              name: grafana-dashboard-mysqloverview
+          - configMap:
+              items:
+              - key: MySQL_Performance_Schema.json
+                path: MySQL_Performance_Schema.json
+              name: grafana-dashboard-mysqlperformanceschema
+          - configMap:
+              items:
+              - key: MySQL_Table_Statistics.json
+                path: MySQL_Table_Statistics.json
+              name: grafana-dashboard-mysqltablestatistics
+          - configMap:
+              items:
+              - key: MySQL_Wait_Event_Analyses.json
+                path: MySQL_Wait_Event_Analyses.json
+              name: grafana-dashboard-mysqlwaiteventanalyses
+          - configMap:
+              items:
+              - key: Nginx.json
+                path: Nginx.json
+              name: grafana-dashboard-nginx
+          - configMap:
+              items:
+              - key: NextCloud.json
+                path: NextCloud.json
+              name: grafana-dashboard-nextcloud
+          - configMap:
+              items:
+              - key: Nexus.json
+                path: Nexus.json
+              name: grafana-dashboard-nexus
+          - configMap:
+              items:
+              - key: NodeJS_Applications.json
+                path: NodeJS_Applications.json
+              name: grafana-dashboard-nodejsapplications
+          - configMap:
+              items:
+              - key: NodeJS_Metrics.json
+                path: NodeJS_Metrics.json
+              name: grafana-dashboard-nodejsmetrics
+          - configMap:
+              items:
+              - key: OpenLDAP.json
+                path: OpenLDAP.json
+              name: grafana-dashboard-openldap
+          - configMap:
+              items:
+              - key: Postfix.json
+                path: Postfix.json
+              name: grafana-dashboard-postfix
+          - configMap:
+              items:
+              - key: Postgres.json
+                path: Postgres.json
+              name: grafana-dashboard-postgres
+          - configMap:
+              items:
+              - key: Prometheus.json
+                path: Prometheus.json
+              name: grafana-dashboard-prometheus
+          - configMap:
+              items:
+              - key: Redis.json
+                path: Redis.json
+              name: grafana-dashboard-redis
+          - configMap:
+              items:
+              - key: RocketChat.json
+                path: RocketChat.json
+              name: grafana-dashboard-rocketchat
+          - configMap:
+              items:
+              - key: S3_Bucket.json
+                path: S3_Bucket.json
+              name: grafana-dashboard-s3bucket
+          - configMap:
+              items:
+              - key: SonarQube.json
+                path: SonarQube.json
+              name: grafana-dashboard-sonarqube
+          - configMap:
+              items:
+              - key: Squid.json
+                path: Squid.json
+              name: grafana-dashboard-squid
+          - configMap:
+              items:
+              - key: Tekton_PipelineRuns.json
+                path: Tekton_PipelineRuns.json
+              name: grafana-dashboard-tektonpipelineruns
+          - configMap:
+              items:
+              - key: Tekton_TaskRuns.json
+                path: Tekton_TaskRuns.json
+              name: grafana-dashboard-tektontaskruns
+          - configMap:
+              items:
+              - key: Thanos.json
+                path: Thanos.json
+              name: grafana-dashboard-thanos
+          - configMap:
+              items:
+              - key: Thanos_Compact.json
+                path: Thanos_Compact.json
+              name: grafana-dashboard-thanoscompact
+          - configMap:
+              items:
+              - key: Thanos_Query.json
+                path: Thanos_Query.json
+              name: grafana-dashboard-thanosquery
+          - configMap:
+              items:
+              - key: Thanos_Query_Frontend.json
+                path: Thanos_Query_Frontend.json
+              name: grafana-dashboard-thanosqueryfrontend
+          - configMap:
+              items:
+              - key: Thanos_Receive.json
+                path: Thanos_Receive.json
+              name: grafana-dashboard-thanosreceive
+          - configMap:
+              items:
+              - key: Thanos_Rule.json
+                path: Thanos_Rule.json
+              name: grafana-dashboard-thanosrule
+          - configMap:
+              items:
+              - key: Thanos_Sidecar.json
+                path: Thanos_Sidecar.json
+              name: grafana-dashboard-thanossidecar
+          - configMap:
+              items:
+              - key: Thanos_Store.json
+                path: Thanos_Store.json
+              name: grafana-dashboard-thanosstore
+          - configMap:
+              items:
+              - key: Traefik2.json
+                path: Traefik2.json
+              name: grafana-dashboard-traefik2
+      - emptyDir: {}
+        name: run

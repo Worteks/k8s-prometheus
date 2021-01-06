@@ -1,0 +1,377 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: prometheus
+spec:
+  podManagementPolicy: Parallel
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      name: prometheus
+  serviceName: prometheus
+  template:
+    metadata:
+      labels:
+        name: prometheus
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: name
+                operator: In
+                values:
+                - prometheus
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - args:
+        - --config.file=/etc/prometheus/prometheus.yml
+        - --storage.tsdb.max-block-duration=2h
+        - --storage.tsdb.min-block-duration=2h
+        - --storage.tsdb.path=/prometheus
+        - --storage.tsdb.retention.time=48h
+        - --web.console.libraries=/usr/share/prometheus/console_libraries
+        - --web.console.templates=/usr/share/prometheus/consoles
+        - --web.enable-admin-api
+        - --web.enable-lifecycle
+        env:
+        - name: TZ
+          value: Europe/Paris
+        image: docker.io/prom/prometheus:v2.23.0
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /-/healthy
+            port: 9090
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 20
+        name: prometheus
+        ports:
+        - containerPort: 9090
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /-/ready
+            port: 9090
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        resources:
+          limits:
+            cpu: 250m
+            memory: 2Gi
+          requests:
+            cpu: 100m
+            memory: 1Gi
+        volumeMounts:
+        - mountPath: /etc/prometheus
+          name: temp
+          subPath: prometheus
+        - mountPath: /prometheus
+          name: data
+        - mountPath: /etc/prometheus/rules.d
+          name: rules
+      - args:
+        - sidecar
+        - --grpc-address=0.0.0.0:10901
+        - --http-address=0.0.0.0:10902
+        - --log.level=info
+        - --objstore.config=$(OBJSTORE_CONFIG)
+        - --prometheus.ready_timeout=10m
+        - --prometheus.url=http://127.0.0.1:9090
+        - --tsdb.path=/prometheus
+        env:
+        - name: OBJSTORE_CONFIG
+          valueFrom:
+            secretKeyRef:
+              key: thanos.yaml
+              name: thanos-store
+        - name: TZ
+          value: Europe/Paris
+        image: quay.io/thanos/thanos:v0.17.1
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 30
+          httpGet:
+            path: /-/healthy
+            port: 10902
+          periodSeconds: 30
+        name: thanos
+        ports:
+        - containerPort: 10901
+        - containerPort: 10902
+        readinessProbe:
+          failureThreshold: 20
+          httpGet:
+            path: /-/ready
+            port: 10902
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+        volumeMounts:
+        - mountPath: /prometheus
+          name: data
+      initContainers:
+      - args:
+        - -c
+        - |
+          sed "/external_labels:.*/ascrape_by: $REPLICA" /etc/prometheus.yml.tpl | \
+              sed "s|^scrape_by:|    scrape_by:|" >/etc/prometheus/prometheus.yml;
+        command:
+        - /bin/sh
+        env:
+        - name: REPLICA
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        image: docker.io/prom/prometheus:v2.23.0
+        imagePullPolicy: Always
+        name: configure
+        volumeMounts:
+        - mountPath: /etc/prometheus
+          name: temp
+          subPath: prometheus
+        - mountPath: /etc/prometheus.yml.tpl
+          name: config
+          subPath: prometheus.yml
+      nodeSelector:
+        node-role.kubernetes.io/infra: "true"
+      securityContext:
+        runAsUser: 1000
+      serviceAccount: prometheus
+      serviceAccountName: prometheus
+      terminationGracePeriodSeconds: 120
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: prometheus
+        name: config
+      - name: rules
+        projected:
+          defaultMode: 420
+          sources:
+          - configMap:
+              items:
+              - key: apache.yaml
+                path: apache.yaml
+              name: prometheus-rule-apache
+          - configMap:
+              items:
+              - key: blackbox.yaml
+                path: blackbox.yaml
+              name: prometheus-rule-blackbox
+          - configMap:
+              items:
+              - key: bigbluebutton.yaml
+                path: bigbluebutton.yaml
+              name: prometheus-rule-bigbluebutton
+          - configMap:
+              items:
+              - key: cadvisor.yaml
+                path: cadvisor.yaml
+              name: prometheus-rule-cadvisor
+          - configMap:
+              items:
+              - key: cassandra.yaml
+                path: cassandra.yaml
+              name: prometheus-rule-cassandra
+          - configMap:
+              items:
+              - key: ceph.yaml
+                path: ceph.yaml
+              name: prometheus-rule-ceph
+          - configMap:
+              items:
+              - key: consul.yaml
+                path: consul.yaml
+              name: prometheus-rule-consul
+          - configMap:
+              items:
+              - key: coredns.yaml
+                path: coredns.yaml
+              name: prometheus-rule-coredns
+          - configMap:
+              items:
+              - key: elasticsearch.yaml
+                path: elasticsearch.yaml
+              name: prometheus-rule-elasticsearch
+          - configMap:
+              items:
+              - key: etcd.yaml
+                path: etcd.yaml
+              name: prometheus-rule-etcd
+          - configMap:
+              items:
+              - key: fluentd.yaml
+                path: fluentd.yaml
+              name: prometheus-rule-fluentd
+          - configMap:
+              items:
+              - key: freeswitch.yaml
+                path: freeswitch.yaml
+              name: prometheus-rule-freeswitch
+          - configMap:
+              items:
+              - key: haproxy.yaml
+                path: haproxy.yaml
+              name: prometheus-rule-haproxy
+          - configMap:
+              items:
+              - key: java.yaml
+                path: java.yaml
+              name: prometheus-rule-java
+          - configMap:
+              items:
+              - key: jobs.yaml
+                path: jobs.yaml
+              name: prometheus-rule-jobs
+          - configMap:
+              items:
+              - key: kafka.yaml
+                path: kafka.yaml
+              name: prometheus-rule-kafka
+          - configMap:
+              items:
+              - key: kube-state-metrics.yaml
+                path: kube-state-metrics.yaml
+              name: prometheus-rule-kube-state-metrics
+          - configMap:
+              items:
+              - key: linkerd.yaml
+                path: linkerd.yaml
+              name: prometheus-rule-linkerd
+          - configMap:
+              items:
+              - key: minio.yaml
+                path: minio.yaml
+              name: prometheus-rule-minio
+          - configMap:
+              items:
+              - key: mongodb.yaml
+                path: mongodb.yaml
+              name: prometheus-rule-mongodb
+          - configMap:
+              items:
+              - key: mysql.yaml
+                path: mysql.yaml
+              name: prometheus-rule-mysql
+          - configMap:
+              items:
+              - key: nextcloud.yaml
+                path: nextcloud.yaml
+              name: prometheus-rule-nextcloud
+          - configMap:
+              items:
+              - key: nexus.yaml
+                path: nexus.yaml
+              name: prometheus-rule-nexus
+          - configMap:
+              items:
+              - key: nginx.yaml
+                path: nginx.yaml
+              name: prometheus-rule-nginx
+          - configMap:
+              items:
+              - key: nodes.yaml
+                path: nodes.yaml
+              name: prometheus-rule-nodes
+          - configMap:
+              items:
+              - key: onlyoffice.yaml
+                path: onlyoffice.yaml
+              name: prometheus-rule-onlyoffice
+          - configMap:
+              items:
+              - key: openldap.yaml
+                path: openldap.yaml
+              name: prometheus-rule-openldap
+          - configMap:
+              items:
+              - key: pgbouncer.yaml
+                path: pgbouncer.yaml
+              name: prometheus-rule-pgbouncer
+          - configMap:
+              items:
+              - key: pods.yaml
+                path: pods.yaml
+              name: prometheus-rule-pods
+          - configMap:
+              items:
+              - key: postfix.yaml
+                path: postfix.yaml
+              name: prometheus-rule-postfix
+          - configMap:
+              items:
+              - key: postgres.yaml
+                path: postgres.yaml
+              name: prometheus-rule-postgres
+          - configMap:
+              items:
+              - key: prometheus.yaml
+                path: prometheus.yaml
+              name: prometheus-rule-prometheus
+          - configMap:
+              items:
+              - key: rabbitmq.yaml
+                path: rabbitmq.yaml
+              name: prometheus-rule-rabbitmq
+          - configMap:
+              items:
+              - key: redis.yaml
+                path: redis.yaml
+              name: prometheus-rule-redis
+          - configMap:
+              items:
+              - key: s3.yaml
+                path: s3.yaml
+              name: prometheus-rule-s3
+          - configMap:
+              items:
+              - key: sidekick.yaml
+                path: sidekick.yaml
+              name: prometheus-rule-sidekick
+          - configMap:
+              items:
+              - key: speedtest.yaml
+                path: speedtest.yaml
+              name: prometheus-rule-speedtest
+          - configMap:
+              items:
+              - key: thanos.yaml
+                path: thanos.yaml
+              name: prometheus-rule-thanos
+          - configMap:
+              items:
+              - key: traefik-v1.yaml
+                path: traefik-v1.yaml
+              name: prometheus-rule-traefik-v1
+          - configMap:
+              items:
+              - key: traefik-v2.yaml
+                path: traefik-v2.yaml
+              name: prometheus-rule-traefik-v2
+          - configMap:
+              items:
+              - key: nonworkinghour.yaml
+                path: nonworkinghour.yaml
+              name: prometheus-rule-nonworkinghour
+      - emptyDir: {}
+        name: data
+      - emptyDir: {}
+        name: temp
+  updateStrategy:
+    type: RollingUpdate

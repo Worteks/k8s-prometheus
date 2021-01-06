@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: thanos-config
+data:
+  index.yaml: |
+    config:
+      max_item_size: 0
+      max_size: 0
+    type: IN-MEMORY
+  frontend.yaml: |
+    config:
+      max_size: ""
+      max_size_items: 0
+      validity: 0s
+    type: IN-MEMORY

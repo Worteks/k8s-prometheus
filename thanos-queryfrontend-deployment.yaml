@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thanos-queryfrontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      name: thanos-queryfrontend
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: thanos-queryfrontend
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: name
+                operator: In
+                values: [ thanos-queryfrontend ]
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - args:
+        - query-frontend
+        - --http-address=0.0.0.0:9090
+        - --http-grace-period=2m
+        - --log.level=info
+        - --log.request.decision=LogFinishCall
+        - --query-frontend.log-queries-longer-than=5s
+        - --query-frontend.downstream-url=http://thanos-query.NAMESPACE_SED.svc.cluster.local:9090
+        - --query-range.partial-response
+        - --query-range.response-cache-config-file=/config/frontend.yaml
+        - --query-range.response-cache-max-freshness=2m
+        - --query-range.split-interval=2h
+        image: quay.io/thanos/thanos:v0.17.1
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 4
+          httpGet:
+            path: /-/healthy
+            port: 9090
+          periodSeconds: 30
+        name: thanos
+        ports:
+        - containerPort: 9090
+        readinessProbe:
+          failureThreshold: 20
+          httpGet:
+            path: /-/ready
+            port: 9090
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: 500m
+            memory: 2Gi
+          requests:
+            cpu: 50m
+            memory: 512Mi
+        volumeMounts:
+        - mountPath: /config
+          name: config
+      securityContext:
+        runAsUser: 1001
+      volumes:
+      - configMap:
+          name: thanos-config
+        name: config

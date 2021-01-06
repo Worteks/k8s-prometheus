@@ -1,0 +1,11 @@
+groups:
+- name: KubernetesS3Storage
+  rules:
+  - alert: S3EndpointDown
+    expr: s3_endpoint_up == 0
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "S3Endpoint down (instance {{ $labels.instance }})"
+      description: "S3Endpoint instance is down\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"

@@ -1,0 +1,176 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: minio-mb-helpers
+data:
+  readonly.json: |
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Action": [
+            "s3:GetObject"
+          ],
+          "Effect": "Allow",
+          "Resource": [
+            "arn:aws:s3:::BUCKET_PLACEHOLDER/*"
+          ],
+          "Sid": ""
+        }
+      ]
+    }
+  readwrite.json: |
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Action": [
+            "s3:GetObject",
+            "s3:PutObject"
+          ],
+          "Effect": "Allow",
+          "Resource": [
+            "arn:aws:s3:::BUCKET_PLACEHOLDER/*"
+          ],
+          "Sid": ""
+        }
+      ]
+    }
+  readwritedelete.json: |
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Action": [
+            "s3:DeleteObject",
+            "s3:GetObject",
+            "s3:ListBucket",
+            "s3:PutObject"
+          ],
+          "Effect": "Allow",
+          "Resource": [
+            "arn:aws:s3:::BUCKET_PLACEHOLDER",
+            "arn:aws:s3:::BUCKET_PLACEHOLDER/*"
+          ],
+          "Sid": ""
+        }
+      ]
+    }
+  helpers.sh: |
+    MC=/usr/bin/mc;
+
+    if test -z "$REGION"; then
+        if test -s /input/region; then
+            REGION=$(cat /input/region 2>/dev/null);
+        fi;
+        if test -z "$REGION"; then
+            REGION=us-east-1;
+        fi;
+    fi;
+
+    connectToMinio() {
+        ATTEMPTS=0;
+        LIMIT=29;
+        ACCESS=$(cat /config/access-key 2>/dev/null);
+        SECRET=$(cat /config/secret-key 2>/dev/null);
+        ENDPOINT=$(cat /config/endpoint 2>/dev/null);
+        if test -z "$ACCESS" -o -z "$SECRET" -o -z "$ENDPOINT"; then
+            echo "Failed connecting to MinIO - missing input";
+            exit 1;
+        fi;
+        echo "Connecting to MinIO - $ENDPOINT";
+        while ! $MC config host add myminio "$ENDPOINT" "$ACCESS" "$SECRET";
+        do
+            ATTEMPTS=`expr $ATTEMPTS + 1`;
+            echo "Failed attempts: $ATTEMPTS";
+            if test $ATTEMPTS -gt $LIMIT; then
+                exit 1;
+            fi;
+            sleep 2;
+        done;
+        echo Connected to MinIO;
+        return 0;
+    }
+
+    checkBucketExists() {
+        BUCKET="$1";
+        $MC ls "myminio/$BUCKET" >/dev/null 2>&1;
+        return $?;
+    }
+
+    checkPolicyExists() {
+        $MC admin policy list myminio 2>&1 | grep "^$POLICY$" >/dev/null;
+        return $?;
+    }
+
+    checkUserExists() {
+        S3USER="$1";
+        $MC admin user list myminio 2>&1 | grep "^$S3USER$" >/dev/null;
+        return $?;
+    }
+
+    createBucket() {
+        PURGE=$1;
+        BUCKET=$(cat /input/bucket 2>/dev/null);
+        if test -z "$BUCKET"; then
+            echo "Failed - bucket name not found";
+            return 1;
+        fi
+        test -z "$POLICY" && POLICY=app-$BUCKET;
+        if test "$PURGE" = true; then
+            if checkBucketExists "$BUCKET"; then
+                echo "Purging bucket $BUCKET.";
+                $MC rm -r --force "myminio/$BUCKET";
+            else
+                echo "Bucket '$BUCKET' does not exist, skipping purge.";
+            fi;
+        fi;
+        if ! checkBucketExists "$BUCKET"; then
+            echo "Creating bucket $BUCKET";
+            if ! $MC mb "myminio/$BUCKET" --region=$REGION; then
+                echo "Failed creating bucket $BUCKET";
+                return 1;
+            fi;
+        else
+            echo "Bucket $BUCKET already exists.";
+        fi;
+        if test "$POLICY" != none -a "$POLICY" != public; then
+            test -z "$GRANTS" && GRANTS=readwrite;
+            if ! test -e "/helpers/$GRANTS.json"; then
+                GRANTS=none;
+            fi;
+            if ! checkPolicyExists "$POLICY"; then
+                sed "s|BUCKET_PLACEHOLDER|$BUCKET|g" \
+                     "/helpers/$GRANTS.json" >/empty/policy.json;
+                if ! $MC admin policy add myminio "$POLICY" /empty/policy.json; then
+                    echo "Failed creating Policy $POLICY ($GRANTS)";
+                    return 1;
+                fi;
+                echo "Created Policy $POLICY ($GRANTS)";
+            else
+                echo "Policy $POLICY already exists";
+            fi;
+            if test -e /input/access-key -a -e /input/secret-key; then
+                USER_ACCESS=$(cat /input/access-key 2>/dev/null);
+                USER_SECRET=$(cat /input/secret-key 2>/dev/null);
+                if test -z "$USER_ACCESS" -o -z "$USER_SECRET"; then
+                    echo "Failed creating User for bucket $BUCKET - missing input";
+                    return 1;
+                elif ! checkUserExists "$USER_ACCESS"; then
+                    if ! $MC admin user add myminio "$USER_ACCESS" "$USER_SECRET"; then
+                        echo "Failed creating User for bucket $BUCKET";
+                        return 1;
+                    elif ! $MC admin policy set myminio "$POLICY" "user=$USER_ACCESS"; then
+                        echo "Failed granting User $GRANTS access to bucket $BUCKET";
+                        return 1;
+                    fi;
+                    echo "Created User with $GRANTS access to bucket $BUCKET";
+                else
+                    echo "User for bucket $BUCKET already exists";
+                fi;
+            fi;
+        else
+            echo "Setting policy of bucket $BUCKET to $POLICY.";
+            $MC policy set $POLICY "myminio/$BUCKET";
+        fi;
+    }

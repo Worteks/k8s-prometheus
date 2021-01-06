@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: teamsproxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: teamsproxy
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: teamsproxy
+    spec:
+      containers:
+      - env:
+        - name: TEAMS_INCOMING_WEBHOOK_URL
+          valueFrom:
+            secretKeyRef:
+              key: teams-url
+              name: alertmanager
+        - name: TEAMS_REQUEST_URI
+          value: alertmanager
+        image: quay.io/prometheusmsteams/prometheus-msteams:v1.4.1
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          tcpSocket:
+            port: 2000
+          timeoutSeconds: 25
+        name: teamsproxy
+        ports:
+        - containerPort: 2000
+        readinessProbe:
+          initialDelaySeconds: 30
+          httpGet:
+            path: /metrics
+            port: 2000
+          periodSeconds: 30
+          timeoutSeconds: 20
+        resources:
+          limits:
+            cpu: 100m
+            memory: 48Mi
+          requests:
+            cpu: 10m
+            memory: 8Mi
+      nodeSelector:
+        node-role.kubernetes.io/infra: "true"
+      securityContext:
+        runAsUser: 1000

@@ -1,0 +1,43 @@
+groups:
+- name: KubernetesFluentd
+  rules:
+  - alert: FluentdDown
+    expr: up{kubernetes_service_name=~"fluentd-.+"} == 0
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Fluentd is DOWN (instance {{ $labels.kubernetes_node_name }})"
+      description: "Fluentd is down\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+  - alert: FluentdRetransmissionFailure
+    expr: sum(rate(fluentd_output_status_emit_records[1m])) by (kubernetes_node_name) < 1
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Fluentd logs forwarding failure (instance {{ $labels.kubernetes_node_name }})"
+      description: "Fluentd is not forwarding logs\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+  - alert: FluentdRetransmissionPartial
+    expr: sum(rate(fluentd_output_status_emit_records[1m])) by (kubernetes_node_name) < sum(98 * rate(fluentd_input_status_num_records_total[1m]) / 100) by (kubernetes_node_name)
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Fluentd logs forwarding late or incomplete (instance {{ $labels.kubernetes_node_name }})"
+      description: "Fluentd is not forwarding all logs\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+  - alert: FluentdOutputBufferWarning
+    expr: max_over_time(fluentd_output_status_buffer_queue_length[1m]) > 16
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Fluentd output buffer growing (instance {{ $labels.kubernetes_node_name }})"
+      description: "Fluentd is not forwarding all logs\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+  - alert: FluentdOutputRetryWarning
+    expr: rate(fluentd_output_status_retry_count[1m]) > 0
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Fluentd output retry counter non-null (instance {{ $labels.kubernetes_node_name }})"
+      description: "Fluentd is not forwarding all logs\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"

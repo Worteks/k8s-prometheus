@@ -1,0 +1,57 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-makebucket-thanos
+spec:
+  backoffLimit: 3
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        name: minio-makebucket-init
+    spec:
+      containers:
+      - args:
+        - -c
+        - >
+            echo "Starting Bucket $BUCKET_NAME init on $(date +%s)";
+            . /helpers/helpers.sh;
+            connectToMinio;
+            createBucket;
+            exit 0;
+        command: [ '/bin/sh' ]
+        env:
+        - name: BUCKET_NAME
+          value: thanos
+        - name: GRANTS
+          value: readwrite
+        - name: HOME
+          value: /empty
+        image: docker.io/minio/mc:RELEASE.2020-11-25T23-04-07Z
+        imagePullPolicy: IfNotPresent
+        name: job
+        volumeMounts:
+        - mountPath: /config
+          name: adminconfig
+        - mountPath: /empty
+          name: empty
+        - mountPath: /helpers
+          name: helpers
+        - mountPath: /input
+          name: userconfig
+      restartPolicy: Never
+      securityContext:
+        runAsUser: 1001
+      volumes:
+      - name: adminconfig
+        secret:
+          secretName: minio-admin
+      - name: empty
+        emptyDir: {}
+      - configMap:
+          name: minio-mb-helpers
+        name: helpers
+      - name: userconfig
+        secret:
+          secretName: minio-thanos-accesskey

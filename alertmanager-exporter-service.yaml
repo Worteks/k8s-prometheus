@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    k8s-app: scrape-me
+  name: exporter-alertmanager
+spec:
+  ports:
+  - name: exporter-9093
+    port: 9093
+  selector:
+    name: alertmanager

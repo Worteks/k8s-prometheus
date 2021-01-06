@@ -1,0 +1,19 @@
+groups:
+- name: KubernetesMinio
+  rules:
+  - alert: MinioDiskOffline
+    expr: minio_offline_disks > 0
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Minio disk offline (instance {{ $labels.instance }})"
+      description: "Minio disk is offline\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+  - alert: MinioStorageSpaceExhausted
+    expr: minio_disk_storage_free_bytes / 1024 / 1024 / 1024 < 10
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Minio storage space exhausted (instance {{ $labels.instance }})"
+      description: "Minio storage space is low (< 10 GB)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+spec:
+  ports:
+  - name: tcp-9090
+    port: 9090
+  selector:
+    name: prometheus

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-thanos
+spec:
+  ports:
+  - name: tcp-10901
+    port: 19091
+  - name: tcp-10902
+    port: 19092
+  selector:
+    name: prometheus

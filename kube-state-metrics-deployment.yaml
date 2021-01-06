@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-state-metrics
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: kube-state-metrics
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: kube-state-metrics
+    spec:
+      containers:
+      - env:
+        - name: TZ
+          value: Europe/Paris
+        image: k8s.gcr.io/kube-state-metrics/kube-state-metrics:KSM_TAG
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 19
+          httpGet:
+            path: /healthz
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 4
+        name: kube-state-metrics
+        ports:
+        - containerPort: 8080
+          name: http-metrics
+          protocol: TCP
+        - containerPort: 8081
+          name: telemetry
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: 8081
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 4
+        resources:
+          limits:
+            cpu: 30m
+            memory: 200Mi
+          requests:
+            cpu: 30m
+            memory: 50Mi
+      nodeSelector:
+        node-role.kubernetes.io/infra: "true"
+      securityContext:
+        runAsUser: 1000
+      serviceAccount: kube-state-metrics
+      serviceAccountName: kube-state-metrics

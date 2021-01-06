@@ -1,0 +1,11 @@
+groups:
+- name: KubernetesOnlyOffice
+  rules:
+  - alert: OnlyOfficeDown
+    expr: onlyoffice_up == 0
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "OnlyOffice down (instance {{ $labels.instance }})"
+      description: "OnlyOffice instance is down\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"

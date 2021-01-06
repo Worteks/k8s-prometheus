@@ -1,0 +1,59 @@
+groups:
+- name: KubernetesPostfix
+  rules:
+  - alert: PostfixDown
+    expr: postfix_up == 0
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Postfix down (instance {{ $labels.instance }})"
+      description: "Postfix down\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+  - alert: PostfixSomeDeferred
+    expr: increase(postfix_smtp_status_deferred[1m]) > 1
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Some Postfix messages are deferred (instance {{ $labels.instance }})"
+      description: "Some Postfix messages are deferred\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+  - alert: PostfixTooManyDeferred
+    expr: increase(postfix_smtp_status_deferred[1m]) > 10
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Several Postfix messages are deferred (instance {{ $labels.instance }})"
+      description: "Several Postfix messages are deferred\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+  - alert: PostfixSomeTimeouts
+    expr: increase(postfix_smtp_connection_timed_out_total[1m]) > 1
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "SMTP Connexions are timing out (instance {{ $labels.instance }})"
+      description: "SMTP Connexions are timing out\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+  - alert: PostfixTooManyTimeouts
+    expr: increase(postfix_smtp_connection_timed_out_total[1m]) > 10
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "SMTP Connexions are timing out (instance {{ $labels.instance }})"
+      description: "SMTP Connexions are timing out\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+  - alert: PostfixSomeCleanupRefused
+    expr: increase(postfix_cleanup_messages_not_accepted_total[1m]) > 1
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Some Postfix messages are refused (instance {{ $labels.instance }})"
+      description: "Some Postfix messages are refused\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+  - alert: PostfixTooManyCleanupRefused
+    expr: increase(postfix_cleanup_messages_not_accepted_totald[1m]) > 10
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Several Postfix messages are refused (instance {{ $labels.instance }})"
+      description: "Several Postfix messages are refused\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"

@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: thanos-store
+spec:
+  podManagementPolicy: OrderedReady
+  replicas: 1
+  selector:
+    matchLabels:
+      name: thanos-store
+  serviceName: thanos-store
+  template:
+    metadata:
+      labels:
+        name: thanos-store
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: name
+                operator: In
+                values: [ thanos-store ]
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - args:
+        - store
+        - --data-dir=/var/thanos/store
+        - --grpc-address=0.0.0.0:10901
+        - --http-address=0.0.0.0:10902
+        - --index-cache.config-file=/config/index.yaml
+        - --log.level=info
+        - --objstore.config=$(OBJSTORE_CONFIG)
+        env:
+        - name: OBJSTORE_CONFIG
+          valueFrom:
+            secretKeyRef:
+              key: thanos.yaml
+              name: thanos-store
+        - name: TZ
+          value: Europe/Paris
+        image: quay.io/thanos/thanos:v0.17.1
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 8
+          httpGet:
+            path: /-/healthy
+            port: 10902
+          periodSeconds: 30
+        name: thanos
+        ports:
+        - containerPort: 10901
+          name: grpc
+        - containerPort: 10902
+          name: http
+        readinessProbe:
+          failureThreshold: 20
+          httpGet:
+            path: /-/ready
+            port: 10902
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: 500m
+            memory: 1Gi
+          requests:
+            cpu: 150m
+            memory: 128Mi
+        volumeMounts:
+        - mountPath: /config
+          name: config
+        - mountPath: /var/thanos/store
+          name: data
+      securityContext:
+        runAsUser: 1001
+      terminationGracePeriodSeconds: 120
+      volumes:
+      - configMap:
+          name: thanos-config
+        name: config
+  updateStrategy:
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ ReadWriteOnce ]
+      resources:
+        requests:
+          storage: 12Gi

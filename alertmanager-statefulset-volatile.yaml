@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: alertmanager
+spec:
+  podManagementPolicy: Parallel
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      name: alertmanager
+  serviceName: alertmanager
+  template:
+    metadata:
+      labels:
+        name: alertmanager
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: name
+                operator: In
+                values:
+                - alertmanager
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - args:
+        - --config.file=/etc/config/alertmanager.yml
+        - --cluster.listen-address=$(POD_IP):6783
+        - --cluster.peer=alertmanager-0.alertmanager.NAMESPACE_SED.svc.cluster.local:6783
+        - --cluster.peer=alertmanager-1.alertmanager.NAMESPACE_SED.svc.cluster.local:6783
+        - --storage.path=/data
+        - --web.listen-address=:9093
+        - --web.route-prefix=/
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: TZ
+          value: Europe/Paris
+        image: docker.io/prom/alertmanager:v0.21.0
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 10
+          initialDelaySeconds: 30
+          periodSeconds: 20
+          successThreshold: 1
+          tcpSocket:
+            port: 9093
+          timeoutSeconds: 10
+        name: alertmanager
+        ports:
+        - containerPort: 6783
+          name: mesh
+          protocol: TCP
+        - containerPort: 9093
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /#/status
+            port: 9093
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 30
+        resources:
+          limits:
+            cpu: 10m
+            memory: 50Mi
+          requests:
+            cpu: 10m
+            memory: 50Mi
+        volumeMounts:
+        - mountPath: /data
+          name: data
+        - mountPath: /etc/config/alertmanager.yml
+          name: config
+          subPath: alertmanager.yml
+      nodeSelector:
+        node-role.kubernetes.io/infra: "true"
+      securityContext:
+        runAsUser: 1000
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: data
+      - name: config
+        secret:
+          defaultMode: 420
+          secretName: alertmanager
+  updateStrategy:
+    type: RollingUpdate
