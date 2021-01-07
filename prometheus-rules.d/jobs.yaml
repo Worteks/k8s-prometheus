@@ -34,14 +34,6 @@ groups:
       summary: "Prometheus job missing (instance {{ $labels.instance }})"
       description: "A Prometheus job has disappeared\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
   - alert: PrometheusJobMissing
-    expr: absent(up{job="s3buckets"})
-    for: 5m
-    labels:
-      severity: warning
-    annotations:
-      summary: "Prometheus job missing (instance {{ $labels.instance }})"
-      description: "A Prometheus job has disappeared\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
-  - alert: PrometheusJobMissing
     expr: absent(up{job="kubeci"})
     for: 5m
     labels:
