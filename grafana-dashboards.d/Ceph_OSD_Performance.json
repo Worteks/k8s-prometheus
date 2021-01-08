@@ -841,10 +841,8 @@
         "allValue": null,
         "current": {
           "selected": true,
-          "text": "k8s-prod",
-          "value": [
-            "k8s-prod"
-          ]
+          "text": "All",
+          "value": "$__all"
         },
         "datasource": "Prometheus",
         "definition": "label_values(ceph_osd_metadata,kubernetes_cluster)",

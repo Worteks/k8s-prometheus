@@ -7,6 +7,8 @@ SMTP_RELAY = changeme
 SMTP_MAILFROM = alertmanager@demo.local
 SMTP_MAILTO = changeme
 
+-include Makefile.cust
+
 apicheck:
 	if ! kubectl get ns >/dev/null 2>&1; then \
 	    echo FATAL: Failed querying namespaces: check k8s connectivity; \
@@ -260,4 +262,4 @@ prometheus: apicheck prometheus-config
 	    | kubectl apply -n $(NAMESPACE) -f-
 endif
 
-install: node-exporter kube-state-metrics alertmanager prometheus grafana
+install: nscheck node-exporter kube-state-metrics alertmanager prometheus grafana

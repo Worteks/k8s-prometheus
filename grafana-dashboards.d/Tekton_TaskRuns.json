@@ -329,10 +329,8 @@
         "allValue": null,
         "current": {
           "selected": true,
-          "text": "k8s-prod",
-          "value": [
-            "k8s-prod"
-          ]
+          "text": "All",
+          "value": "$__all"
         },
         "datasource": "Prometheus",
         "definition": "label_values(tekton_pipelinerun_duration_seconds_sum,kubernetes_cluster)",
