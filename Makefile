@@ -1,3 +1,4 @@
+CLUSTERNAME = k8s-prod
 GRAFANA_ADMIN_PASSWORD = s3cre7
 ROOT_DOMAIN = demo.local
 NAMESPACE = prometheus-monitoring
@@ -165,7 +166,9 @@ prometheus-config:
 		    --from-file=$$file=./prometheus-rules.d/$$file \
 		    | kubectl apply -n $(NAMESPACE) -f-; \
 	    done
-	sed "s|NAMESPACE_SED|$(NAMESPACE)|" prometheus-configmap.yaml \
+	sed -e "s|NAMESPACE_SED|$(NAMESPACE)|" \
+	    -e "s|CLUSTERNAME_SED|$(CLUSTERNAME)|" \
+	    prometheus-configmap.yaml \
 	    | kubectl apply -n $(NAMESPACE) -f-
 
 ifeq ($(DO_THANOS),yes)

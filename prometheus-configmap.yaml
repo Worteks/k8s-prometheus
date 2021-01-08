@@ -17,7 +17,7 @@ data:
     - job_name: prometheus
       static_configs:
       - labels:
-          kubernetes_cluster: k8s-prod
+          kubernetes_cluster: CLUSTERNAME_SED
           kubernetes_namespace: NAMESPACE_SED
           kubernetes_service_name: prometheus
           kubernetes_pod_name: prometheus
@@ -31,7 +31,7 @@ data:
           label: k8s-cluster=scrape-me
       relabel_configs:
       - action: replace
-        replacement: k8s-prod
+        replacement: CLUSTERNAME_SED
         source_labels: [__meta_kubernetes_endpoint_address_target_kind]
         target_label: kubernetes_cluster
       - action: replace
@@ -48,7 +48,7 @@ data:
       metrics_path: /metrics/cadvisor
       relabel_configs:
       - action: replace
-        replacement: k8s-prod
+        replacement: CLUSTERNAME_SED
         source_labels: [__meta_kubernetes_endpoint_address_target_kind]
         target_label: kubernetes_cluster
       - action: replace
@@ -67,7 +67,7 @@ data:
       - role: node
       relabel_configs:
       - action: replace
-        replacement: k8s-prod
+        replacement: CLUSTERNAME_SED
         source_labels: [__meta_kubernetes_endpoint_address_target_kind]
         target_label: kubernetes_cluster
       - action: replace
@@ -88,7 +88,7 @@ data:
           role: endpoints
       relabel_configs:
       - action: replace
-        replacement: k8s-prod
+        replacement: CLUSTERNAME_SED
         source_labels: [__meta_kubernetes_endpoint_address_target_kind]
         target_label: kubernetes_cluster
       - action: replace
@@ -106,7 +106,7 @@ data:
           role: endpoints
       relabel_configs:
       - action: replace
-        replacement: k8s-prod
+        replacement: CLUSTERNAME_SED
         source_labels: [__meta_kubernetes_endpoint_address_target_kind]
         target_label: kubernetes_cluster
       - action: replace
